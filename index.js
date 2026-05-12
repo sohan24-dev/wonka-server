@@ -6,7 +6,7 @@ const express = require('express')
 const cors = require('cors')
 require('dotenv').config()
 const app = express()
-const port = 5000
+const port = process.env.SERVER_PORT
 
 
 app.use(cors())
@@ -29,6 +29,7 @@ async function run() {
         await client.connect();
         const database = client.db("userData");
         const data = database.collection("itemsData");
+        const orderlist = database.collection("orderlist")
 
         app.get('/data', async (req, res) => {
             const cursor = await data.find()
@@ -40,6 +41,12 @@ async function run() {
             // console.log(id);
             const cursor = await data.findOne({ _id: new ObjectId(id) })
             res.send(cursor)
+        })
+
+        app.post('/orderlist', async (req, res) => {
+            const doc = req.body;
+            const result = await orderlist.insertOne(doc)
+            res.send(result)
         })
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
