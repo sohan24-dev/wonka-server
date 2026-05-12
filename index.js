@@ -48,6 +48,11 @@ async function run() {
             const result = await orderlist.insertOne(doc)
             res.send(result)
         })
+        app.get('/orderlist', async (req, res) => {
+            const cursor = await orderlist.find()
+            const allValues = await cursor.toArray();
+            res.send(allValues)
+        })
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged deployment. You successfully connected to MongoDB!");
     } finally {
