@@ -53,6 +53,12 @@ async function run() {
             const allValues = await cursor.toArray();
             res.send(allValues)
         })
+        app.get('/orderlist/:id', async (req, res) => {
+            const id = req.params.id;
+            // console.log(id);
+            const cursor = await orderlist.findOne({ _id: new ObjectId(id) })
+            res.send(cursor)
+        })
         app.delete('/orderlist/:id', async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
