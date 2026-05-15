@@ -3,7 +3,8 @@ dns.setServers(['8.8.8.8', '8.8.4.4'])
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const express = require('express')
-const cors = require('cors')
+const cors = require('cors');
+const { createRemoteJWKSet, jwtVerify } = require('jose-cjs');
 require('dotenv').config()
 const app = express()
 const PORT = process.env.PORT || 5000;
@@ -21,6 +22,34 @@ const client = new MongoClient(uri, {
     }
 });
 
+const jwks = createRemoteJWKSet(
+    new URL(process.env.BASE_URL + "/api/auth/jwks")
+)
+
+const verifytoken = async (req, res, next) => {
+    const headerss = req?.headers?.authorization;
+    if (!headerss) {
+        return res.status(401).json({
+            massage: "Unauthorized"
+        })
+    }
+    const token = headerss.split(' ')[1];
+    if (!token) {
+        return res.status(401).json({
+            massage: "Unauthorized"
+        })
+    }
+    try {
+        const { payload } = await jwtVerify(token, jwks)
+        console.log(payload);
+        next()
+    } catch (error) {
+        return res.status(403).json({
+            massage: "Forbidden"
+        })
+    }
+
+}
 
 
 async function run() {
@@ -36,14 +65,14 @@ async function run() {
             const allValues = await cursor.toArray();
             res.send(allValues)
         })
-        app.get('/data/:id', async (req, res) => {
+        app.get('/data/:id', verifytoken, async (req, res) => {
             const id = req.params.id;
             // console.log(id);
             const cursor = await data.findOne({ _id: new ObjectId(id) })
             res.send(cursor)
         })
 
-        app.post('/orderlist', async (req, res) => {
+        app.post('/orderlist', verifytoken, async (req, res) => {
             const doc = req.body;
             const result = await orderlist.insertOne(doc)
             res.send(result)
@@ -53,7 +82,7 @@ async function run() {
             const allValues = await cursor.toArray();
             res.send(allValues)
         })
-        app.get('/orderlist/:id', async (req, res) => {
+        app.get('/orderlist/:id', verifytoken, async (req, res) => {
             const id = req.params.id;
             // console.log(id);
             const cursor = await orderlist.findOne({ _id: new ObjectId(id) })
